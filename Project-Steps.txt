@@ -1,0 +1,193 @@
+# 🚀 Launch Linux EC2 Instances in Two AWS Regions using a Single Terraform File
+
+## 🧠 **Objective**
+
+The goal of this task is to use **Terraform** to **automate the creation of two EC2 instances** — each in a **different AWS region** — **using a single Terraform configuration file**.
+
+This helps you understand how **multi-region infrastructure automation** works in the cloud 🌎
+
+---
+
+## ⚙️ **Tech Stack Used**
+
+* ☁️ **AWS EC2** – Virtual servers running Linux OS
+* 🪄 **Terraform** – Infrastructure as Code (IaC) tool for automation
+* 💻 **AWS CLI** – For authentication and managing AWS services
+
+---
+
+## 🧩 **Prerequisites**
+
+Before starting, make sure you have the following ready:
+
+✅ An **AWS account** with an access key and secret key
+✅ **AWS CLI installed and configured** on your EC2 instance
+✅ **Terraform installed** on your EC2 Ubuntu instance
+✅ An **IAM user** with `EC2FullAccess` and `VPCFullAccess` permissions
+
+---
+
+## 🪜 **Steps to Perform**
+
+### 1️⃣ **Launch an EC2 Instance (Ubuntu) for Terraform**
+
+You’ll first need one EC2 instance (your control machine) where you’ll run Terraform.
+
+* Choose **Ubuntu 22.04 LTS**
+* Allow **SSH (22)** in the security group
+* Connect via SSH:
+
+  ```bash
+  ssh -i your-key.pem ubuntu@<your-ec2-public-ip>
+  ```
+
+---
+
+### 2️⃣ **Install Terraform and AWS CLI**
+
+Run these commands in your EC2 terminal 👇
+
+```bash
+# Update packages
+sudo apt update -y
+
+# Install AWS CLI
+sudo apt install awscli -y
+
+# Install Terraform
+sudo apt install wget unzip -y
+wget https://releases.hashicorp.com/terraform/1.7.5/terraform_1.7.5_linux_amd64.zip
+unzip terraform_1.7.5_linux_amd64.zip
+sudo mv terraform /usr/local/bin/
+terraform -version
+```
+
+---
+
+### 3️⃣ **Configure AWS CLI**
+
+Connect Terraform to AWS using your credentials:
+
+```bash
+aws configure
+```
+
+Enter:
+
+* AWS Access Key ID
+* AWS Secret Access Key
+* Default region → (you can choose any, like `ap-south-1`)
+* Output format → `json`
+
+---
+
+### 4️⃣ **Create the Terraform Configuration File**
+
+Create a new file named `main.tf`:
+
+```bash
+nano main.tf
+```
+
+Paste the below code 👇
+
+```hcl
+# ---------- Provider for Region 1 (Mumbai) ----------
+provider "aws" {
+  alias  = "mumbai"
+  region = "ap-south-1"
+}
+
+# ---------- Provider for Region 2 (Singapore) ----------
+provider "aws" {
+  alias  = "singapore"
+  region = "ap-southeast-1"
+}
+
+# ---------- EC2 Instance in Mumbai ----------
+resource "aws_instance" "mumbai_ec2" {
+  provider          = aws.mumbai
+  ami               = "ami-0aebec83a182ea7ea"  # Ubuntu 22.04 LTS for Mumbai
+  instance_type     = "t2.micro"
+  key_name          = "your-keypair-name"
+  tags = {
+    Name = "EC2-Mumbai"
+  }
+}
+
+# ---------- EC2 Instance in Singapore ----------
+resource "aws_instance" "singapore_ec2" {
+  provider          = aws.singapore
+  ami               = "ami-05c1fa8df71875112"  # Ubuntu 22.04 LTS for Singapore
+  instance_type     = "t2.micro"
+  key_name          = "your-keypair-name"
+  tags = {
+    Name = "EC2-Singapore"
+  }
+}
+```
+
+💡 *Make sure to replace* `"your-keypair-name"` *with your actual EC2 key pair name!*
+
+---
+
+### 5️⃣ **Initialize and Apply Terraform**
+
+Run the following commands in sequence 👇
+
+```bash
+# Initialize Terraform (download providers)
+terraform init
+
+# Validate configuration
+terraform validate
+
+# Preview what will be created
+terraform plan
+
+# Apply configuration (create EC2 instances)
+terraform apply -auto-approve
+```
+
+✅ Terraform will now launch:
+
+* 1 EC2 instance in **Mumbai (ap-south-1)**
+* 1 EC2 instance in **Singapore (ap-southeast-1)**
+
+---
+
+### 6️⃣ **Verify in AWS Console**
+
+Go to your **AWS Console → EC2 Dashboard**
+
+* Switch region → `ap-south-1` → you’ll see one EC2 instance 🖥️
+* Switch region → `ap-southeast-1` → another EC2 instance will be visible 🌏
+
+---
+
+## 🧹 **Cleanup (Destroy Infrastructure)**
+
+Once you finish testing, **destroy** the created EC2 instances to avoid AWS charges 💰
+
+```bash
+terraform destroy -auto-approve
+```
+
+This will remove both EC2 instances from both regions.
+
+---
+
+## 🧾 **Summary**
+
+✅ Installed and configured Terraform on AWS EC2
+✅ Created a single Terraform file for multi-region setup
+✅ Deployed EC2 instances in **Mumbai** and **Singapore** regions
+✅ Verified both instances in AWS console
+✅ Cleaned up resources using `terraform destroy`
+
+---
+
+## 🎯 **End Result**
+
+You’ve successfully automated **multi-region EC2 deployment** using **Terraform** — all from **one single file** 🎉
+
